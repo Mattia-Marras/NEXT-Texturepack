@@ -14,6 +14,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
+          fetch-depth: 0
       - name: Merge shader-free ItemsAdder emote models into four packs
         shell: bash
         run: |
@@ -30,7 +31,7 @@ jobs:
              ('GCF 1.21.11 (Hypixel ball).zip', 'new', 'Hypixel'),
           ]
           def excluded(s):
-              return bool(re.search(r'(^|/)(font|fonts|shaders)(/|$)', s, re.I)) or s.startswith(('assets/space/lang/','assets/minecraft/lang/','assets/minecraft/optifine/'))
+              return bool(re.search(r'(^|/)(font|fonts|shaders)(/|$)', s, re.I)) or s.startswith(('assets/space/lang/','assets/minecraft/lang/',''))
           def mcmeta(ver, flavor):
               if ver == 'new':
                   payload={'pack':{'pack_format':46,'supported_formats':{'min_inclusive':46,'max_inclusive':64},'min_format':46,'max_format':[75,0],'description':f'NextFootball {flavor.lower()} + ItemsAdder modern emotes (1.21.4-1.21.11; no fonts/shaders)'},'overlays':{'entries':[{'directory':'ia_overlay_1_21_4_to_5','formats':[46,55]},{'directory':'ia_overlay_1_21_6_plus','formats':[63,75],'min_format':63,'max_format':[75,0]}]}}
@@ -47,6 +48,16 @@ jobs:
                   if p in entries and entries[p] != raw:
                       raise RuntimeError('Asset conflict: '+name+' / '+p)
                   entries[p] = raw
+              # Restore original OptiFine sky/menu assets in the older Hypixel pack;
+              # they are unrelated to font replacement or entity shaders.
+              if version == 'old' and flavor == 'Hypixel':
+                  import subprocess, io
+                  original_blob = subprocess.check_output(
+                      ['git', 'show', '0be8245a1a27be207e6e757e94d3e4ba62df5e5e:' + name])
+                  with ZipFile(io.BytesIO(original_blob)) as original_zip:
+                      for asset_path in original_zip.namelist():
+                          if asset_path.startswith('assets/minecraft/optifine/') and not asset_path.endswith('/') and not excluded(asset_path):
+                              entries[asset_path] = original_zip.read(asset_path)
               entries['pack.mcmeta'] = mcmeta(version, flavor)
               dst = Path(name+'.new')
               with ZipFile(dst,'w',compression=ZIP_DEFLATED,compresslevel=7) as z:
