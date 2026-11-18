@@ -1,0 +1,81 @@
+name: Update NextFootball four resource packs
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/update-nextfootball-packs.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  repack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Merge shader-free ItemsAdder emote models into four packs
+        shell: bash
+        run: |
+          python3 - <<'PYCODE'
+          import json, gzip, base64, re, hashlib
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED, ZipInfo
+          packed = "H4sIAN8V/moC/+Va7XKbOhB9lQz9q2LEN3mVOsMooMRqMHiQaJPb8bt3JbBDMLmViOzr22Ty4UHa1dnV0e4B8sshnFPBVzkjrBa0rUm12jYlrfiK1oKJl9WuIi+0Xe1Iu81b9rgReeh+503t3Dq/1g5chnlr53bt3HesEqwe7NYOWjsl49IchmGq2LC23NEWbHtHG1KXw1BLal4RwZoaLnz76rkh+uojjN3oDtzwglRUDsD1BGE39CIkP8qxthFHu8xDOPWQd7ff7x2kH1pFH4fQorOHhlVgnuu/E1lsPbKKPogc/12Bld12+3KG3XqFjZaC8q8RVHhdoHjH8/ga8xRcIyjvukDtNpSUZwA1X1CSSTXJQnT8ZbWY4CvL8n1TnqOYzGbZnzZarEp2YrUXSQGhelFw/qDcJPqogLi5uXmNrui4aLbTwNrmOy3EavfQtPQQ3Sg2QZ9F11LeY4RIBSsUjLXDyC32k7WzBwC0olvwKKd9g3kPpDiY1E0rNv3H7occ9lHsRihAqQQ+uFf+vngqX5A++C7pM1z0lG/CxdhBoByE+g54072FEEP6IpSgQNfDT/oWQoxC5SDWddDtxubYQxHK9K3L5me92F46EI00S90M7FJXJe6hbbbyYuIGyHdjlLj+hEmwHKkf1WZ7MEKeGVer9LRugL5MES6VToFtd1Oyyxo7y22ADyt6b1gdwo6eFMND0YHLjx3LK3liFAZAL0/cXpfdfMOGA3dWbgcoU9TEeCm5U8UsA26ckDuFrZQesqXkztTpAI4Fi9mdmqw/w259+zG7k3iO3jj+BPw+VO/zUzxU9Ir0t3fK8Eg5iPUdzJTvRFXfxQwHgkmGA8cXMxzwo+QDDNe3HzM8nSO4/wn43cv1vAArGDorwaHuIR9FS+ntg3mob35CbrgrAHL4S6kdAva43whzXsfSVN94SmvIGoA3ZXUGVEqBxPB3zOvYhSyC0gsXszqWjv8PuuTskjtRoiLVFxVTUieq4qYfqNmpEhXZcsntK2kVGEirk5oNHUP/pmGmZuvb/+01m5G8+UFbWDXHuY/zMBdNHq0Gym9ZTYuWPIgVE3TLh5vnXEIb0VydiAHqy65PJkB+pLkMiIhio2KGowL3y/JeGsb7w5Qr07wkgqgpx7zLFJOquifF08TxEdIt39GCkUoZ3hM+HZaIV/ADmAXN+VNX9VPn0L5a9VmHaU9M3c4DbBUzZEsdp1q0jB5OqtjA4d40lZyIPfh6x/0s0tEjitvZR1rvov03jHs0gwtbwvX6zMQeNt8Stv4BlT1cgSVcr+887GELLWIb3jTZAxdZJNvwhs8euNgOuOFJuD1ciU1cFpmW2sRl8XRmNnHZq2bYs4nLHu8xtonLXrHARtVfdfSRBFkG4072cal5OPuHljmodhBHMEm0HZ1TRHG+qzr+eRXRm4RfjwiawPqvdY8OnAtJHR0oF1Q3OnAuKWh08FxSw+jguZBs0YFyIaWiA+VC4kQHyoX0iAaUS0kQHSgXUh06UM4jNKYr/0lbnIiI4WHidMH5f0n4cyeXS7esPPbmXUtLVsCcHveMxOhb9n4Un1ZTVjnW9I61vY/7rMkKvvYKh9Zp4j3Q9j7uhiYrhEYrHBucyRKR0SYce5bJErHuEsc2ZOI9MfNuuAOpmXdDBmVm3s3Yjz0z72a7irGZdzNa4snJPS28UFKd/W+j8r2MGC4AAA=="
+          assets = {name: data.encode('utf-8') for name, data in json.loads(gzip.decompress(base64.b64decode(packed))).items()}
+          jobs = [
+             ('GFC 1.21 (NextFB ball)V3 (1).zip', 'old', 'NextFB'),
+             ('GFC 1.21 (Hypixel ball)V3 (1).zip', 'old', 'Hypixel'),
+             ('GCF 1.21.11 (NextFB ball).zip', 'new', 'NextFB'),
+             ('GCF 1.21.11 (Hypixel ball).zip', 'new', 'Hypixel'),
+          ]
+          def excluded(s):
+              return bool(re.search(r'(^|/)(font|fonts|shaders)(/|$)', s, re.I)) or s.startswith(('assets/space/lang/','assets/minecraft/lang/','assets/minecraft/optifine/'))
+          def mcmeta(ver, flavor):
+              if ver == 'new':
+                  payload={'pack':{'pack_format':46,'supported_formats':{'min_inclusive':46,'max_inclusive':64},'min_format':46,'max_format':[75,0],'description':f'NextFootball {flavor.lower()} + ItemsAdder modern emotes (1.21.4-1.21.11; no fonts/shaders)'},'overlays':{'entries':[{'directory':'ia_overlay_1_21_4_to_5','formats':[46,55]},{'directory':'ia_overlay_1_21_6_plus','formats':[63,75],'min_format':63,'max_format':[75,0]}]}}
+              else:
+                  payload={'pack':{'pack_format':34,'supported_formats':{'min_inclusive':34,'max_inclusive':42},'description':f'NextFootball {flavor.lower()} (1.21-1.21.3; no fonts/shaders)'}}
+              return (json.dumps(payload, ensure_ascii=False,indent=2)+'\n').encode()
+          for name, version, flavor in jobs:
+              src = Path(name)
+              with ZipFile(src) as z:
+                  entries = {n:z.read(n) for n in z.namelist() if not n.endswith('/') and not excluded(n)}
+              for p, raw in assets.items():
+                  if version == 'new' and p=='assets/minecraft/models/item/player_head.json': continue
+                  if version == 'old' and p.startswith('ia_overlay_'): continue
+                  if p in entries and entries[p] != raw:
+                      raise RuntimeError('Asset conflict: '+name+' / '+p)
+                  entries[p] = raw
+              entries['pack.mcmeta'] = mcmeta(version, flavor)
+              dst = Path(name+'.new')
+              with ZipFile(dst,'w',compression=ZIP_DEFLATED,compresslevel=7) as z:
+                  stamp = (2026, 11, 18, 20, 50, 16 if name == 'GCF 1.21.11 (Hypixel ball).zip' else 14)
+                  for key in sorted(entries):
+                      zi = ZipInfo(key, stamp)
+                      zi.compress_type = ZIP_DEFLATED
+                      zi._compresslevel = 7
+                      zi.external_attr = 0o600 << 16
+                      z.writestr(zi, entries[key])
+              with ZipFile(dst) as z:
+                  assert z.testzip() is None
+                  for p in z.namelist():
+                      assert not excluded(p), p
+                      if p.endswith(('.json','.mcmeta')): json.loads(z.read(p))
+                  ball='assets/minecraft/items/diamond_block.json' if version=='new' else 'assets/minecraft/models/item/diamond_block.json'
+                  assert ('hypixel_ball' in z.read(ball).decode('utf-8')) == (flavor=='Hypixel')
+                  assert 'assets/_iainternal/models/entity/player/phead_0.json' in z.namelist()
+              print('Prepared',name,dst.stat().st_size,'sha1',hashlib.sha1(dst.read_bytes()).hexdigest())
+              dst.replace(src)
+          PYCODE
+      - name: Commit resource packs at existing paths
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- '*.zip'
+          if git diff --cached --quiet; then
+            echo 'No changes'; exit 0
+          fi
+          git commit -m 'Update four resource packs with ItemsAdder emotes (font/shader-free)'
+          git push origin HEAD:main
