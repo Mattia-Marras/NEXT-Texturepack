@@ -38,9 +38,11 @@ jobs:
               else:
                   payload={'pack':{'pack_format':34,'supported_formats':{'min_inclusive':34,'max_inclusive':42},'description':f'NextFootball {flavor.lower()} (1.21-1.21.3; no fonts/shaders)'}}
               return (json.dumps(payload, ensure_ascii=False,indent=2)+'\n').encode()
+          import subprocess, io
           for name, version, flavor in jobs:
               src = Path(name)
-              with ZipFile(src) as z:
+              base_zip = subprocess.check_output(['git', 'show', '0be8245a1a27be207e6e757e94d3e4ba62df5e5e:' + name])
+              with ZipFile(io.BytesIO(base_zip)) as z:
                   entries = {n:z.read(n) for n in z.namelist() if not n.endswith('/') and not excluded(n)}
               for p, raw in assets.items():
                   if version == 'new' and p=='assets/minecraft/models/item/player_head.json': continue
