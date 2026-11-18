@@ -31,7 +31,7 @@ jobs:
              ('GCF 1.21.11 (Hypixel ball).zip', 'new', 'Hypixel'),
           ]
           def excluded(s):
-              return bool(re.search(r'(^|/)(font|fonts|shaders)(/|$)', s, re.I)) or s.startswith(('assets/space/lang/','assets/minecraft/lang/',''))
+              return bool(re.search(r'(^|/)(font|fonts|shaders)(/|$)', s, re.I)) or s.startswith(('assets/space/lang/','assets/minecraft/lang/'))
           def mcmeta(ver, flavor):
               if ver == 'new':
                   payload={'pack':{'pack_format':46,'supported_formats':{'min_inclusive':46,'max_inclusive':64},'min_format':46,'max_format':[75,0],'description':f'NextFootball {flavor.lower()} + ItemsAdder modern emotes (1.21.4-1.21.11; no fonts/shaders)'},'overlays':{'entries':[{'directory':'ia_overlay_1_21_4_to_5','formats':[46,55]},{'directory':'ia_overlay_1_21_6_plus','formats':[63,75],'min_format':63,'max_format':[75,0]}]}}
