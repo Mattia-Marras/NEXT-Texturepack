@@ -59,16 +59,6 @@ jobs:
                   if p in entries and entries[p] != raw:
                       raise RuntimeError('Asset conflict: '+name+' / '+p)
                   entries[p] = raw
-              # Restore original OptiFine sky/menu assets in the older Hypixel pack;
-              # they are unrelated to font replacement or entity shaders.
-              if version == 'old' and flavor == 'Hypixel':
-                  import subprocess, io
-                  original_blob = subprocess.check_output(
-                      ['git', 'show', '0be8245a1a27be207e6e757e94d3e4ba62df5e5e:' + name])
-                  with ZipFile(io.BytesIO(original_blob)) as original_zip:
-                      for asset_path in original_zip.namelist():
-                          if asset_path.startswith('assets/minecraft/optifine/') and not asset_path.endswith('/') and not excluded(asset_path):
-                              entries[asset_path] = original_zip.read(asset_path)
               entries['pack.mcmeta'] = mcmeta(version, flavor)
               dst = Path(name+'.new')
               with ZipFile(dst,'w',compression=ZIP_DEFLATED,compresslevel=7) as z:
