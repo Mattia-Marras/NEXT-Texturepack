@@ -45,9 +45,14 @@ jobs:
           import subprocess, io
           for name, version, flavor in jobs:
               src = Path(name)
-              base_zip = subprocess.check_output(['git', 'show', '0be8245a1a27be207e6e757e94d3e4ba62df5e5e:' + name])
+              # Start from the last verified pack so historic removed assets stay removed.
+              base_zip = subprocess.check_output(['git', 'show', 'e95a3c6b36a07e4f3c3bb0116d19ab38c4980761:' + name])
               with ZipFile(io.BytesIO(base_zip)) as z:
                   entries = {n:z.read(n) for n in z.namelist() if not n.endswith('/') and not excluded(n)}
+              # Restore only the original ASCII font atlas from the historical source.
+              ascii_zip = subprocess.check_output(['git', 'show', '0be8245a1a27be207e6e757e94d3e4ba62df5e5e:' + name])
+              with ZipFile(io.BytesIO(ascii_zip)) as old_fonts:
+                  entries['assets/minecraft/textures/font/ascii.png'] = old_fonts.read('assets/minecraft/textures/font/ascii.png')
               for p, raw in assets.items():
                   if version == 'new' and p=='assets/minecraft/models/item/player_head.json': continue
                   if version == 'old' and p.startswith('ia_overlay_'): continue
