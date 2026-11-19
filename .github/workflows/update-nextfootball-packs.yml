@@ -31,6 +31,10 @@ jobs:
              ('GCF 1.21.11 (Hypixel ball).zip', 'new', 'Hypixel'),
           ]
           def excluded(s):
+              # Preserve the original chat font atlas; leave font provider JSON
+              # and shaders excluded to avoid conflicts with ItemsAdder.
+              if s == 'assets/minecraft/textures/font/ascii.png':
+                  return False
               return bool(re.search(r'(^|/)(font|fonts|shaders)(/|$)', s, re.I)) or s.startswith(('assets/space/lang/','assets/minecraft/lang/'))
           def mcmeta(ver, flavor):
               if ver == 'new':
@@ -72,6 +76,7 @@ jobs:
                       z.writestr(zi, entries[key])
               with ZipFile(dst) as z:
                   assert z.testzip() is None
+                  assert 'assets/minecraft/textures/font/ascii.png' in z.namelist()
                   for p in z.namelist():
                       assert not excluded(p), p
                       if p.endswith(('.json','.mcmeta')): json.loads(z.read(p))
